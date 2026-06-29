@@ -337,12 +337,13 @@ cell_annotation_diagnostic_plots_fn <- function(cell_annotation,
 #' @export
 cell_annotation_diagnostic_plots_files_fn <- function(cell_annotation_diagnostic_plots) {
   res <- lapply_rows(cell_annotation_diagnostic_plots, FUN = function(row) {
-    if (!is.na(row$score_heatmaps_out_file)) {
+    if ("score_heatmaps_out_file" %in% names(row) && !is.na(row$score_heatmaps_out_file)) {
       save_pdf(row$score_heatmaps, output_file = row$score_heatmaps_out_file)
     }
-
-    save_pdf(list(row$delta_distribution_plot), output_file = row$delta_distribution_plot_out_file)
-    if (!is_null(row$marker_heatmaps)) {
+    if ("delta_distribution_plot_out_file" %in% names(row)) {
+      save_pdf(list(row$delta_distribution_plot), output_file = row$delta_distribution_plot_out_file)
+    }
+    if ("marker_heatmaps_out_file" %in% names(row) && !is_null(row$marker_heatmaps)) {
       save_pdf(row$marker_heatmaps, output_file = row$marker_heatmaps_out_file)
     }
     return(row)
