@@ -266,7 +266,13 @@ cell_annotation_diagnostic_plots_fn <- function(cell_annotation,
     row$delta_distribution_plot <- SingleR::plotDeltaDistribution(row$cell_annotation) +
       ggtitle("Delta score distribution", subtitle = row$name)
 
-    if (row$train_params$genes == "de") {
+    if (row$train_params$genes == "de" && length(unique(row$cell_annotation$labels)) < 2) {
+      ## single cell type: keep the row structurally normal with a placeholder plot
+      row$marker_heatmaps <- magrittr::set_names(
+        list(create_dummy_plot(glue("Only one cell type assigned:\n{row$name}"))),
+        unique(row$cell_annotation$labels)
+      )
+    } else if (row$train_params$genes == "de") {
       labels <- row$cell_annotation$labels
       sce$labels <- labels
       heatmap_n_top_markers <- row$diagnostics_params$heatmap_n_top_markers
