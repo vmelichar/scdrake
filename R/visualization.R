@@ -723,6 +723,18 @@ plot_clustree <- function(cluster_list, params, prefix, title = deparse(substitu
   cluster_list <- unique(cluster_list)
   params <- unique(params)
 
+  ## bail out early: fewer than two usable clusterings, or a single cluster
+  ## at every resolution -> no tree to draw. Placed BEFORE the length assertion
+  ## because identical degenerate clusterings get collapsed by unique() above,
+  ## which can itself trip that assertion.
+  max_clusters <- if (length(cluster_list) == 0L) 0L else max(purrr::map_int(cluster_list, ~ dplyr::n_distinct(.x)))
+  if (length(cluster_list) < 2L || max_clusters < 2L) {
+    return(create_dummy_plot(glue(
+      "Cannot build a clustering tree:\n",
+      "{length(cluster_list)} distinct clustering(s), at most {max_clusters} cluster(s) at any resolution.\n{title}"
+    )))
+  }
+
   assert_that_(length(cluster_list) == length(params))
 
   clustree_list <- cluster_list %>%
