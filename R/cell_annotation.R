@@ -266,7 +266,13 @@ cell_annotation_diagnostic_plots_fn <- function(cell_annotation,
     row$delta_distribution_plot <- SingleR::plotDeltaDistribution(row$cell_annotation) +
       ggtitle("Delta score distribution", subtitle = row$name)
 
-    if (row$train_params$genes == "de") {
+    if (row$train_params$genes == "de" && length(unique(row$cell_annotation$labels)) < 2) {
+      ## single cell type: keep the row structurally normal with a placeholder plot
+      row$marker_heatmaps <- magrittr::set_names(
+        list(create_dummy_plot(glue("Only one cell type assigned:\n{row$name}"))),
+        unique(row$cell_annotation$labels)
+      )
+    } else if (row$train_params$genes == "de") {
       labels <- row$cell_annotation$labels
       sce$labels <- labels
       heatmap_n_top_markers <- row$diagnostics_params$heatmap_n_top_markers
@@ -331,12 +337,13 @@ cell_annotation_diagnostic_plots_fn <- function(cell_annotation,
 #' @export
 cell_annotation_diagnostic_plots_files_fn <- function(cell_annotation_diagnostic_plots) {
   res <- lapply_rows(cell_annotation_diagnostic_plots, FUN = function(row) {
-    if (!is.na(row$score_heatmaps_out_file)) {
+    if ("score_heatmaps_out_file" %in% names(row) && !is.na(row$score_heatmaps_out_file)) {
       save_pdf(row$score_heatmaps, output_file = row$score_heatmaps_out_file)
     }
-
-    save_pdf(list(row$delta_distribution_plot), output_file = row$delta_distribution_plot_out_file)
-    if (!is_null(row$marker_heatmaps)) {
+    if ("delta_distribution_plot_out_file" %in% names(row)) {
+      save_pdf(list(row$delta_distribution_plot), output_file = row$delta_distribution_plot_out_file)
+    }
+    if ("marker_heatmaps_out_file" %in% names(row) && !is_null(row$marker_heatmaps)) {
       save_pdf(row$marker_heatmaps, output_file = row$marker_heatmaps_out_file)
     }
     return(row)
