@@ -720,18 +720,18 @@ dimred_plots_from_params_df <- function(sce_dimred, dimred_plots_params_df,spati
 #' @concept sce_visualization
 #' @export
 plot_clustree <- function(cluster_list, params, prefix, title = deparse(substitute(cluster_list)), edge_arrow = FALSE, highlight_core = TRUE, ...) {
-  cluster_list <- unique(cluster_list)
-  params <- unique(params)
+  ## NOTE: do NOT unique() cluster_list / params here. clustree expects one column
+  ## per resolution; identical clusterings across resolutions are valid (a cluster
+  ## that doesn't split). Deduping cluster_list but not params desynchronizes them
+  ## and trips the length assertion (e.g. resolutions 0.1 & 0.2 both single-cluster).
 
-  ## bail out early: fewer than two usable clusterings, or a single cluster
-  ## at every resolution -> no tree to draw. Placed BEFORE the length assertion
-  ## because identical degenerate clusterings get collapsed by unique() above,
-  ## which can itself trip that assertion.
+  ## guard: fewer than two resolutions, or a single cluster at EVERY resolution
+  ## -> no tree to draw -> dummy plot (covers clustree's ">= 2 columns" rule too).
   max_clusters <- if (length(cluster_list) == 0L) 0L else max(purrr::map_int(cluster_list, ~ dplyr::n_distinct(.x)))
   if (length(cluster_list) < 2L || max_clusters < 2L) {
     return(create_dummy_plot(glue(
       "Cannot build a clustering tree:\n",
-      "{length(cluster_list)} distinct clustering(s), at most {max_clusters} cluster(s) at any resolution.\n{title}"
+      "{length(cluster_list)} resolution(s), at most {max_clusters} cluster(s) at any resolution.\n{title}"
     )))
   }
 
