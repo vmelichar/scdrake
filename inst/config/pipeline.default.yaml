@@ -30,7 +30,13 @@ DRAKE_UNLOCK_CACHE: True
 DRAKE_FORMAT: "rds"
 DRAKE_REBUILD: null
 DRAKE_CACHING: "worker"
-DRAKE_MEMORY_STRATEGY: "speed"
+## -- "preclean" unloads targets from RAM between builds (reloading from the cache on demand),
+## -- unlike "speed" which keeps everything resident. Needed for large projects (e.g. integration
+## -- of many samples with several methods) that otherwise exhaust memory. Other options:
+## -- "autoclean", "lookahead", "unload", "none". See ?drake::make.
+DRAKE_MEMORY_STRATEGY: "preclean"
+## -- Run gc() after each target so RAM freed by the memory strategy is actually reclaimed.
+DRAKE_GARBAGE_COLLECTION: True
 DRAKE_LOG_BUILD_TIMES: False
 
 BLAS_N_THREADS: null

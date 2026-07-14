@@ -269,6 +269,12 @@ NULL
     cli_alert_info("Setting {.pkg drake} storage format to {.val rds} (fallback).")
   }
 
+  ## -- Default for configs predating the DRAKE_GARBAGE_COLLECTION key (non-strict access
+  ## -- so it does not error on an old config that lacks it).
+  if (is_null(cfg[["DRAKE_GARBAGE_COLLECTION", check = FALSE]])) {
+    cfg$DRAKE_GARBAGE_COLLECTION <- TRUE
+  }
+
   cfg$DRAKE_VERBOSITY <- as.integer(cfg$DRAKE_VERBOSITY)
 
   return(cfg)
