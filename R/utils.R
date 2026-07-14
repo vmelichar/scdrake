@@ -590,6 +590,12 @@ set_rstudio_drake_cache <- function(dir, verbose = TRUE) {
 #' @concept misc_utils
 #' @export
 save_pdf <- function(plots, output_file, width = NULL, height = NULL, make_thumbnail = FALSE, stop_on_error = FALSE) {
+  ## -- Accept either a list of plots or a single ggplot. lapply_rows() unwraps a length-1
+  ## -- list-column (e.g. the single-cell-type placeholder marker heatmap) down to a bare
+  ## -- ggplot; without this it would be iterated component-by-component in the loop below.
+  if (inherits(plots, "ggplot")) {
+    plots <- list(plots)
+  }
   fs::dir_create(fs::path_dir(output_file), recurse = TRUE)
   res <- tryCatch(
     {

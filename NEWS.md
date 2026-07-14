@@ -1,3 +1,34 @@
+# scdrake (development version)
+
+## Robustness for small / edge-case datasets
+- `plot_clustree()` now returns a placeholder ("dummy") plot instead of erroring when a clustering
+  tree cannot be built — fewer than two resolutions, or a single cluster at every resolution.
+  It also no longer de-duplicates `cluster_list` / `params`: identical clusterings across resolutions
+  are valid (a cluster that does not split), and deduplicating only one of the two desynchronized them
+  and tripped a length check.
+- Cell annotation diagnostics now handle a single assigned cell type:
+  `cell_annotation_diagnostic_plots_fn()` produces a placeholder marker heatmap instead of failing
+  the DE marker-heatmap path, which assumes at least two labels.
+- `cell_annotation_diagnostic_plots_files_fn()` guards each plot-saving step by the presence of its
+  output-file column, so rows with differing columns (e.g. the single-cell-type case) no longer error.
+
+## Memory
+- Reduced peak memory usage, mainly for large integration projects:
+  - Default `DRAKE_MEMORY_STRATEGY` changed from `"speed"` to `"preclean"` so targets are unloaded
+    from RAM between builds (and reloaded from the `drake` cache on demand).
+  - Added the `DRAKE_GARBAGE_COLLECTION` pipeline config option (default `True`), wired to
+    `drake::make()` / `drake::drake_config()`.
+  - Note: memory also scales with the number of enabled `INTEGRATION_METHODS` (doubled when cell
+    cycle gene removal is on), so keeping only `uncorrected` + your final method reduces it further.
+
+## Fixes
+- `save_pdf()` now accepts a single `ggplot` (not only a list of plots), so the single-cell-type
+  placeholder marker heatmap is saved as a valid PDF instead of a broken one.
+
+## Tests
+- Added unit tests for the dummy-plot fallbacks (`create_dummy_plot()`, `plot_clustree()` early exit,
+  cell-annotation diagnostic plot saving, and `save_pdf()`).
+
 # scdrake 1.7.1
 - updated Rmd files
 - updated clustree
