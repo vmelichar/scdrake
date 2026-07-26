@@ -24,10 +24,16 @@
 ## Fixes
 - `save_pdf()` now accepts a single `ggplot` (not only a list of plots), so the single-cell-type
   placeholder marker heatmap is saved as a valid PDF instead of a broken one.
+- Cell-cycle scoring (`sce_cc_fn()`) no longer silently loses phase/scores when a permissive gene
+  filter leaves many tied near-zero genes. `Seurat::CellCycleScoring()` fails to bin genes at the
+  default `nbin = 24`; it now retries with progressively smaller `nbin` (down to 4) and only falls
+  back to `NA` if none work.
 
 ## Tests
 - Added unit tests for the dummy-plot fallbacks (`create_dummy_plot()`, `plot_clustree()` early exit,
   cell-annotation diagnostic plot saving, and `save_pdf()`).
+- Added a regression test that a tied-near-zero-gene sample still gets cell-cycle phases via the
+  `nbin` retry.
 
 # scdrake 1.7.1
 - updated Rmd files

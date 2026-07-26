@@ -87,24 +87,37 @@ sce_cc_fn <- function(sce_final_input_qc, cc_genes, data = NULL, cc_eval = TRUE,
       seu <- Seurat::as.Seurat(sce_final_input_qc, data = data)
     }
     
-    ## -- CellCycleScoring() can fail if there are no cell cycle genes.
-    seu_cc <- tryCatch(
-      Seurat::CellCycleScoring(
-        seu,
-        s.features = cc_genes[cc_genes$phase == "S", "ENSEMBL"],
-        g2m.features = cc_genes[cc_genes$phase == "G2M", "ENSEMBL"],
-        set.ident = TRUE
-      ),
-      error = function(e) {
-        cli_alert_warning(str_space(
-          "{.code Seurat::CellCycleScoring()} failed, setting {.field phase}, {.field s_score}, {.field g2m_score} and",
-          "{.field cc_difference} to {.val NA}."
-        ))
-        return(NULL)
+    ## -- CellCycleScoring() bins all genes into `nbin` quantile bins to choose control genes.
+    ## -- A permissive gene filter leaves a tie-pile of near-zero genes, so cut_number() cannot
+    ## -- form 24 unique breaks and it errors. Retry with progressively coarser binning, stopping
+    ## -- at the largest nbin that works. It can also fail if there are no cell cycle genes.
+    ## -- ponytail: nbin may end up differing per sample (scores not strictly comparable across
+    ## --           samples); pin a fixed nbin here if you need identical binning everywhere.
+    seu_cc <- NULL
+    for (nbin in seq(24L, 4L, by = -1L)) {
+      seu_cc <- tryCatch(
+        Seurat::CellCycleScoring(
+          seu,
+          s.features = cc_genes[cc_genes$phase == "S", "ENSEMBL"],
+          g2m.features = cc_genes[cc_genes$phase == "G2M", "ENSEMBL"],
+          set.ident = TRUE,
+          nbin = nbin
+        ),
+        error = function(e) NULL
+      )
+      if (!is_null(seu_cc)) {
+        if (nbin != 24L) {
+          cli_alert_info("{.code CellCycleScoring()}: reduced {.field nbin} to {nbin} (tied low-expression genes).")
+        }
+        break
       }
-    )
-    
+    }
+
     if (is_null(seu_cc)) {
+      cli_alert_warning(str_space(
+        "{.code Seurat::CellCycleScoring()} failed for all {.field nbin} values, setting {.field phase},",
+        "{.field s_score}, {.field g2m_score} and {.field cc_difference} to {.val NA}."
+      ))
       seu_cc <- seu
       seu_cc$phase <- NA
       seu_cc$s_score <- NA
